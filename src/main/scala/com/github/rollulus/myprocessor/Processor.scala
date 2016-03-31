@@ -1,51 +1,51 @@
 package com.github.rollulus.myprocessor
 
-import java.util.Properties
-
-import io.confluent.kafka.serializers.{KafkaAvroDeserializerConfig, AbstractKafkaAvroSerDeConfig}
+import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
 import org.apache.kafka.common.serialization._
-import org.apache.kafka.streams.kstream.{KStream, KStreamBuilder}
+import org.apache.kafka.streams.kstream.{KStreamBuilder}
 import org.apache.kafka.streams._
-
-/*class GenericAvroDeserializerX(client: SchemaRegistryClient, props: util.Map[String,_]) extends Deserializer[GenericRecord] {
-  var inner : KafkaAvroDeserializer = new KafkaAvroDeserializer() //new KafkaAvroDeserializer(client, props)
-
-  def this() = this(null, null)
-
-  override def configure(map: util.Map[String, _], b: Boolean): Unit = inner.configure(map, b)
-  override def close(): Unit = inner.close()
-  override def deserialize(s: String, bytes: Array[Byte]): GenericRecord = {
-    println(javax.xml.bind.DatatypeConverter.printHexBinary(bytes))
-    inner.deserialize(s, bytes).asInstanceOf[GenericRecord]
-  }
-}*/
+import KeyValueImplicits._
+import Properties._
 
 object Processor {
+  lazy val SOURCE_TOPIC_CONFIG = "source.topic"
+  lazy val SINK_TOPIC_CONFIG = "sink.topic"
+
+  def propertiesFromFiles(files: Array[String]) = files.map(Properties.fromFile).foldLeft(new java.util.Properties)(Properties.union)
+
   def main(args: Array[String]): Unit = {
+    // configure
+    require(args.length > 0, "at least one .properties file should be given as program argument")
+    val builder = new KStreamBuilder
+    val cfg = propertiesFromFiles(args).union(fixedProperties())
+    val sourceTopic = cfg.getProperty(SOURCE_TOPIC_CONFIG)
+    val sinkTopic = cfg.getProperty(SINK_TOPIC_CONFIG)
 
-    val builder: KStreamBuilder = new KStreamBuilder
+    // source
+    val tweets = builder.stream[String, TwitterStatus](sourceTopic)
 
-    val streamingConfig = {
-      val settings = new Properties
-      settings.put(StreamsConfig.JOB_ID_CONFIG, "my-processor")
-      settings.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092")
-      settings.put(StreamsConfig.ZOOKEEPER_CONNECT_CONFIG, "localhost:2181")
-      settings.put(StreamsConfig.KEY_SERIALIZER_CLASS_CONFIG, classOf[StringSerializer])
-      settings.put(StreamsConfig.KEY_DESERIALIZER_CLASS_CONFIG, classOf[StringDeserializer])
-      settings.put(StreamsConfig.VALUE_SERIALIZER_CLASS_CONFIG, classOf[StringSerializer])
-      settings.put(StreamsConfig.VALUE_DESERIALIZER_CLASS_CONFIG, classOf[SpecificAvroDeserializer[TwitterStatus]])
-      settings.put(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, "http://localhost:8081")
-      settings.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, "true")
-      settings
-    }
+    // transformation
+    val tweetcount = tweets.map[String, TwitterStatus]((k, v) => {
+      (v.getUser().getScreenName, v)
+    }).countByKey(new StringSerializer, new LongSerializer, new StringDeserializer, new LongDeserializer, "Count")
 
-    val lines = builder.stream[String, TwitterStatus]("tweets")
+    // sink
+    tweetcount.to(sinkTopic, new StringSerializer, new LongSerializer)
 
-    val d = lines.mapValues[String](l=>{
-      l.getText
-    })
-    d.to("tweets-text-only")
-
-    new KafkaStreams(builder, streamingConfig).start()
+    // run
+    new KafkaStreams(builder, cfg).start()
   }
+}
+
+object fixedProperties {
+  def apply() = Properties.create(Map(
+    StreamsConfig.KEY_SERIALIZER_CLASS_CONFIG -> classOf[StringSerializer],
+    StreamsConfig.KEY_DESERIALIZER_CLASS_CONFIG -> classOf[StringDeserializer],
+    StreamsConfig.VALUE_SERIALIZER_CLASS_CONFIG -> classOf[StringSerializer],
+    StreamsConfig.VALUE_DESERIALIZER_CLASS_CONFIG -> classOf[SpecificAvroDeserializer[TwitterStatus]],
+    KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG -> "true"))
+}
+
+object KeyValueImplicits {
+  implicit def Tuple2ToKeyValue[K, V](tuple: (K, V)): KeyValue[K, V] = new KeyValue(tuple._1, tuple._2)
 }

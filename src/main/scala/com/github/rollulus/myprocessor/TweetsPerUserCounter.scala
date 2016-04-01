@@ -7,7 +7,7 @@ import org.apache.kafka.streams._
 import KeyValueImplicits._
 import Properties._
 
-object Processor {
+object TweetsPerUserCounter {
   lazy val SOURCE_TOPIC_CONFIG = "source.topic"
   lazy val SINK_TOPIC_CONFIG = "sink.topic"
 

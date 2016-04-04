@@ -12,7 +12,7 @@ Usage
 =====
 
     mvn package
-    java -cp target/kafka-streams-playground-0.1-jar-with-dependencies.jar com.github.rollulus.myprocessor.TweetsPerMinuteCounter tweets-per-user-counter.properties
+    java -cp target/kafka-streams-playground-0.1-jar-with-dependencies.jar com.github.rollulus.myprocessor.TweetsPerMinuteEventTime tweets-per-user-counter.properties
 
 To run the `TweetsPerMinuteCounter` example. Despite the name, `tweets-per-user-counter.properties` can be used for all examples. 
 

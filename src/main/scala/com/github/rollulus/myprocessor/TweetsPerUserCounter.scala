@@ -1,5 +1,6 @@
 package com.github.rollulus.myprocessor
 
+import com.eneco.trading.kafka.connect.twitter.TwitterStatus
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
 import org.apache.kafka.common.serialization._
 import org.apache.kafka.streams.kstream.{KStreamBuilder}

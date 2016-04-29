@@ -2,6 +2,7 @@ package com.github.rollulus.myprocessor
 
 import java.text.SimpleDateFormat
 
+import com.eneco.trading.kafka.connect.twitter.TwitterStatus
 import org.apache.kafka.common.serialization.{LongDeserializer, StringDeserializer, LongSerializer, StringSerializer}
 import org.apache.kafka.streams.KafkaStreams
 import org.apache.kafka.streams.kstream.{KStreamBuilder}

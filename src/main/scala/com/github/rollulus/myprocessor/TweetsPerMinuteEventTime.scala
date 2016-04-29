@@ -29,8 +29,8 @@ object TweetsPerMinuteEventTime {
     // transformation
     // per/minute is at event time, updated every minute with non-overlapping windows
     val tweetcount = tweets.map[String, TwitterStatus]((k, v) => {
-      val dt = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy").parse(v.getCreatedAt);
-      (new SimpleDateFormat("EEE MMM dd HH:mm:00 Z yyyy").format(dt), v)
+      val dt = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy", Locale.US).parse(v.getCreatedAt);
+      (new SimpleDateFormat("EEE MMM dd HH:mm:00 Z yyyy", Locale.US).format(dt), v)
     }).countByKey(new StringSerializer, new LongSerializer, new StringDeserializer, new LongDeserializer, "Count")
 
     // sink

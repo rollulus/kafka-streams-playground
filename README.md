@@ -1,5 +1,5 @@
-Kafka Streams Playground
-========================
+Kafka Streams Playground (Obsolete)
+===================================
 
 Here are a few examples I made while experimenting with the Kafka Streams.
 At the moment of writing (April 2016), Confluent provides a tech preview version of Kafka Streams in their 2.1.0-alpha version of their platform.
